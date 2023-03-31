@@ -8,7 +8,7 @@ from visual.model.backbone.resnet import resnet18
 
 devices = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = resnet18(num_classes=10, include_top=True).to(devices)
-model.load_state_dict(torch.load(r"D:/002 Projects/001 Python/Learn-visual-tasks/model_009.pth", map_location=devices))
+model.load_state_dict(torch.load(r"D:/002 Projects/001 Python/Learn-visual-tasks/model_080.pth", map_location=devices))
 
 inputs = torch.rand(1, 3, 224, 224).to(devices)
 torch.onnx.export(model, inputs, r"D:/test.onnx", opset_version=11, input_names=["input"], output_names=["output"])

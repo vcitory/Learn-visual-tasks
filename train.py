@@ -10,9 +10,9 @@ from loguru import logger
 from torchvision import transforms
 from torch.utils.data import DataLoader
 
-from visual.data.WIDER_Dataset import WIDERDatesets
+from visual.data.Custom_Landmark_Dataset import Custom_LandMark_Datesets
 from visual.model.backbone.resnet import resnet18
-from visual.model.loss.loss import loss_with_l2
+from visual.model.loss.loss import loss_with_l2, WingLoss
 
 devices = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -23,7 +23,7 @@ train_transforms = transforms.Compose([
 ])
 
 train_img_path = r"E:/003 Datasets/007 person/Key_Point/train/labelv2.txt"
-train_datasets = WIDERDatesets(train_img_path, train_transforms)
+train_datasets = Custom_LandMark_Datesets(train_img_path, train_transforms)
 train_dataload = DataLoader(
     train_datasets,
     batch_size=32,
@@ -34,8 +34,9 @@ train_dataload = DataLoader(
 model = resnet18(num_classes=10, include_top=True).to(devices)
 
 # optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-mse_loss = torch.nn.MSELoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+# mse_loss = torch.nn.MSELoss()
+mse_loss = WingLoss()
 
 def test_dataloader():
     for i, (img, landmark_gt) in enumerate(train_dataload):
@@ -63,11 +64,12 @@ def train():
             optimizer.step()
 
             if (i + 1) % 40 == 0:
-                logger.info('Epoch [{}][{}/{}], loss: {}', epoch, i+1, int(len(train_datasets) / img.shape[0]), loss)
+                logger.info('Epoch: [%d], iter: [%03d/%d], loss: %0.5f' % (epoch, i+1, int(len(train_datasets) / img.shape[0]), loss))
 
         model.eval()
         if (epoch + 1) % 10 == 0:
             torch.save(model.state_dict(), "model_%03d.pth" % (epoch+1))
+            logger.info('model save to {}', "model_%03d.pth" % (epoch+1))
 
 if __name__ == "__main__":
     args = argparse.ArgumentParser(description="train")

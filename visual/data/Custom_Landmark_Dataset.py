@@ -6,9 +6,8 @@ from PIL import Image
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-class WIDERDatesets(DataLoader):
+class Custom_LandMark_Datesets(DataLoader):
     def __init__(self, img_list, transforms=None):
-        # super(WIDERDatesets, self).__init__()
         self.transforms = transforms
         self.imgs_root = os.path.dirname(img_list)
         self.img_list = img_list
@@ -19,8 +18,8 @@ class WIDERDatesets(DataLoader):
         self.line = self.lines[index].strip().split(" ")
         self.img = Image.open(os.path.join(self.imgs_root, self.line[0])).convert("RGB")
 
-        frame = cv2.imread(os.path.join(self.imgs_root, self.line[0]), 1)
-        frame = cv2.resize(frame, (224,224))
+        # frame = cv2.imread(os.path.join(self.imgs_root, self.line[0]), 1)
+        # frame = cv2.resize(frame, (224,224))
 
         self.landmark = np.asarray([float(x) for x in self.line[1:11]], dtype=np.float32)
         self.key_num = int(len(self.landmark) / 2)

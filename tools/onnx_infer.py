@@ -1,23 +1,41 @@
 import cv2
-import numpy as np
 import onnx
-import torch.cuda
-from onnxsim import simplify
+import numpy as np
+import onnxruntime as rt
 
-from visual.model.backbone.resnet import resnet18
+def image_process(img):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-devices = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = resnet18(num_classes=10, include_top=True).to(devices)
-model.load_state_dict(torch.load(r"D:/002 Projects/001 Python/Learn-visual-tasks/model_009.pth", map_location=devices))
+    if (img.shape[0] != 224 or img.shape[1] != 224):
+        img = cv2.resize(img, (224, 224))
 
-inputs = torch.rand(1, 3, 224, 224).to(devices)
-torch.onnx.export(model, inputs, r"D:/test.onnx", opset_version=11, input_names=["input"], output_names=["output"])
+    img = img.astype(np.float32) / 255.0
+    # img = (img - 0.5) / 0.5
+    # img[0,:,:] = (img[0,:,:] - 0.485) / 0.229
+    # img[1,:,:] = (img[1,:,:] - 0.456) / 0.224
+    # img[2,:,:] = (img[2,:,:] - 0.406) / 0.225
 
-onnx_model = onnx.load("D:/test.onnx")  # load onnx model
-model_simp, check = simplify(onnx_model)
-assert check, "Simplified ONNX model could not be validated"
-onnx.save(model_simp, "D:/test.onnx")
-print('finished exporting onnx')
+    img = img.transpose((2, 0, 1))
+    image = img[np.newaxis, :, :, :]
+    image = np.array(image, dtype=np.float32)
+
+    return image
+
+def onnx_runtime():
+    sess = rt.InferenceSession(r"D:/test.onnx")
+    input_name = sess.get_inputs()[0].name
+    output = sess.get_outputs()[0].name
+
+    img = cv2.imread(r"D:\006 Test\keypoint/224_keypoint_pfpld_pic_3.jpg")
+    imgdata_1 = image_process(img)
+    pred_onnx_1 = sess.run(None, {input_name: imgdata_1})[0][0]
+    for i in range(5):
+        img = cv2.circle(img, (int(pred_onnx_1[i * 2 + 0]), int(pred_onnx_1[i * 2 + 1])), 1, (255, 255, 0), -1)
+    cv2.imshow("aaa", img)
+    cv2.waitKey(0)
+
+if __name__ == "__main__":
+    onnx_runtime()
 
 
 
